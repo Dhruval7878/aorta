@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# College Dating App
 
-## Getting Started
+## Introduction
+This project facilitates dating among students within a specific college or school community. It allows students from a college (e.g., College Z) to register using their institutional email addresses (e.g., abc@xyz.edu.in). The platform identifies the college/school based on the domain name (xyz.edu.in) extracted from the email address.
 
-First, run the development server:
+If the domain isn't already in the database, a new node is created for that college/school, connecting all students with the same domain. This setup enables users to interact and view profiles of others within their college/school community.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+The platform's matching algorithm considers each user's preferences and the preferences of others to curate personalized feeds. Users can manage their profile details, including gender and preferences, by visiting the /profile page.
+
+## Prerequisites
+- Node.js (https://nodejs.org/)
+- npm (comes with Node.js) or yarn (https://yarnpkg.com/)
+
+## Setting Up the Project
+
+### Step 1: Clone the Repository
+Open the terminal on Windows by pressing `Win + R`, then typing `cmd.exe`, and pressing Enter. In the terminal, run:
+```sh
+git clone https://github.com/Dhruval7878/college-date.git
+cd college-dating
+code .
+```
+### Step 2: Install Dependencies
+In the integrated terminal of your code editor (you can open it by pressing Ctrl + `):
+`npm i`
+
+### Step 3: Set Up Environment Variables
+Copy the contents of sample.env to a new file named .env and fill in your credentials for Kinde and Neo4j. Get your credentials from the following links:
+- https://kinde.com/
+- https://neo4j.com/
+
+### Step 4: Start the Project
+Run the following command in the terminal:
+`npm run dev`
+This should start the project.
+
+
+## Step-by-Step Setup Using Docker
+### Step 1: Clone the Repository
+Open the terminal or command prompt on your system:
+
+```sh
+git clone https://github.com/Dhruval7878/college-date.git
+cd college-date
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Step 2: Create .env File
+Create a .env file in the root of your project directory and add your credentials for Kinde and Neo4j as described earlier.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Step 3: Build Docker Image
+In the terminal, navigate to your project directory (where your Dockerfile is located) and build the Docker image:
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+```sh
+docker build -t college-dating .
+```
 
-## Learn More
+### Step 4: Run Docker Container
+Once the image is built, you can run a Docker container based on this image:
 
-To learn more about Next.js, take a look at the following resources:
+```sh
+docker run -p 3000:3000 -d --env-file .env college-dating-app
+```
+college-dating is the name of the Docker image you built earlier.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Step 5: Access Your Application
+Open your web browser and navigate to http://localhost:3000 to access your application running inside the Docker container.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+Authentication and Database Setup
+This project uses Kinde for authentication and Neo4j for the database. Make sure you have your credentials set up as described above.
 
-## Deploy on Vercel
+Components and Libraries Used
+Next.js (TypeScript + Tailwind CSS): For building the user interface.
+Kinde: For authentication.
+ShadCN: As the component library.
+Neo4j: As the database.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Troubleshooting and Issues
+If you encounter any issues or need to request changes, feel free to open an issue in the repository.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+Happy Coding!
