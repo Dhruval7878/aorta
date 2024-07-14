@@ -21,7 +21,7 @@ cd college-dating
 code .
 ```
 ### Step 2: Install Dependencies
-In the integrated terminal of your code editor (you can open it by pressing Ctrl + '`'):
+In the integrated terminal of your code editor:
 `npm i`
 
 ### Step 3: Set Up Environment Variables
