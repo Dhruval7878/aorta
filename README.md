@@ -65,6 +65,8 @@ college-dating is the name of the Docker image you built earlier.
 ### Step 5: Access Your Application
 Open your web browser and navigate to http://localhost:3000 to access your application running inside the Docker container.
 
+## Technologies
+
 Authentication and Database Setup
 This project uses Kinde for authentication and Neo4j for the database. Make sure you have your credentials set up as described above.
 
