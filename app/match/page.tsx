@@ -1,34 +1,51 @@
-import { getKindeServerSession } from '@kinde-oss/kinde-auth-nextjs/server';
+'use client'
+
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../AuthProvider';
+import { getMatches } from '../neo4j.actions';
+import NavBar from '../components/NavBar';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Neo4JUser } from '@/types';
 import { redirect } from 'next/navigation';
-import { getUserByID } from '../neo4j.actions';
-import MatchPageClientComponent from './MatchPage';
 
-const matchAuthenticator = async () => {
-    const { isAuthenticated, getUser } = getKindeServerSession();
-    
-    if (!(await isAuthenticated())) {
-        redirect('/api/auth/login?post_login_redirect_url=http://localhost:3000/callback');
+export default function MatchPage() {
+    const { currentUser, loading } = useAuth();
+    const [matches, setMatches] = useState<Neo4JUser[]>([]);
+
+    useEffect(() => {
+        if (currentUser) {
+            const fetchMatches = async () => {
+                const fetchedMatches = await getMatches(currentUser.applicationID);
+                setMatches(fetchedMatches);
+            };
+            fetchMatches();
+        }
+    }, [currentUser]);
+
+    if (loading) {
+        return <div>Loading...</div>;
     }
-
-    const user = await getUser();
-
-    if (!user) {
-        redirect('/api/auth/login?post_login_redirect_url=http://localhost:3000/callback');
-    }
-
-    const currentUser = await getUserByID(user.id);
 
     if (!currentUser) {
         redirect('/api/auth/login?post_login_redirect_url=http://localhost:3000/callback');
+        return null;
     }
 
-    if (currentUser.gender === 2 || currentUser.preference === 2) {
-        redirect('/profile');
-    }
-
-    const plainCurrentUser = JSON.parse(JSON.stringify(currentUser));
-
-    return <MatchPageClientComponent currentUser={plainCurrentUser} />;
-};
-
-export default matchAuthenticator;
+    return (
+        <main>
+            <NavBar currentUser={currentUser} />
+            {matches.length === 0 ? (
+                <p>No matches found</p>
+            ) : (
+                matches.map((user) => (
+                    <Card className='w-96 border-slate-200 hover:shadow-xl' key={user.applicationID}>
+                        <CardHeader>
+                            <CardTitle className=''>{user.firstname} {user.lastname}</CardTitle>
+                            <CardDescription>{user.email}</CardDescription>
+                        </CardHeader>
+                    </Card>
+                ))
+            )}
+        </main>
+    );
+}
