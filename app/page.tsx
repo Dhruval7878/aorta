@@ -6,8 +6,6 @@ import { Neo4JUser } from '@/types';
 
 const Home = async ({ currentUser }: { currentUser: Neo4JUser }) => {
     const usersWithNoConnection = await getUsersWithNoConnection(currentUser.applicationID);
-    
-    // Convert currentUser to a plain object
     const plainCurrentUser = JSON.parse(JSON.stringify(currentUser));
 
     return (
