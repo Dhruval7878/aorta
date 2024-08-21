@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 
 import { cn } from "@/lib/utils"
-import { AuthProvider } from "./AuthProvider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -22,7 +21,7 @@ export default function RootLayout({
       <body className={cn(
         "min-h-screen bg-background font-sans antialiased",
         inter.variable
-      )}><AuthProvider>{children}</AuthProvider></body>
+      )}>{children}</body>
     </html>
   );
 }

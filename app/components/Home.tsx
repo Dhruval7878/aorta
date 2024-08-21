@@ -1,4 +1,5 @@
 "use client";
+
 import * as React from 'react';
 import { Neo4JUser } from '@/types';
 import TinderCard from 'react-tinder-card';
@@ -20,11 +21,7 @@ const HomePageClientComponent: React.FC<HomePageClientComponentProps> = ({ curre
     return (
         <div className='relative'>
             {users.map((user) => (
-                <TinderCard 
-                    onSwipe={(direction) => handleSwipe(direction, user.applicationID)} 
-                    className='absolute grid place-content-center h-screen m-6 w-screen' 
-                    key={user.applicationID}
-                >
+                <TinderCard onSwipe={(direction) => { handleSwipe(direction, user.applicationID) }} className='absolute grid place-content-center h-screen m-6 w-screen' key={user.applicationID}>
                     <Card className='w-80 h-[32rem] border-slate-200 hover:shadow-xl flex flex-col justify-between'>
                         <div className='flex-grow'>
                             <img src='/path/to/user/photo.jpg' alt={`${user.firstname} ${user.lastname}`} className='w-full h-full object-cover' />
