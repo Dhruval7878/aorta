@@ -1,34 +1,39 @@
-import { getKindeServerSession } from '@kinde-oss/kinde-auth-nextjs/server';
-import { redirect } from 'next/navigation';
-import { getUserByID } from '../neo4j.actions';
-import MatchPageClientComponent from './MatchPage';
+"use client";
 
-const matchAuthenticator = async () => {
-    const { isAuthenticated, getUser } = getKindeServerSession();
-    
-    if (!(await isAuthenticated())) {
-        redirect('/api/auth/login?post_login_redirect_url=http://localhost:3000/callback');
-    }
+import * as React from 'react';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Neo4JUser } from '@/db/schema/user.neo';
+import NavBar from '../components/NavBar';
+import { NO_MATCHES_FOUND } from '../../lib/constants';
+import { getMatches } from '../actions/user.actions';
 
-    const user = await getUser();
+const MatchPageClientComponent = ({ currentUser }: { currentUser: Neo4JUser }) => {
+    const [matches, setMatches] = React.useState<Neo4JUser[]>([]);
 
-    if (!user) {
-        redirect('/api/auth/login?post_login_redirect_url=http://localhost:3000/callback');
-    }
+    React.useEffect(() => {
+        const fetchMatches = async () => {
+            const fetchedMatches = await getMatches(currentUser.userId);
+            setMatches(fetchedMatches);
+        };
+        fetchMatches();
+    }, [currentUser]);
 
-    const currentUser = await getUserByID(user.id);
-
-    if (!currentUser) {
-        redirect('/api/auth/login?post_login_redirect_url=http://localhost:3000/callback');
-    }
-
-    if (currentUser.gender === 2 || currentUser.preference === 2) {
-        redirect('/profile');
-    }
-
-    const plainCurrentUser = JSON.parse(JSON.stringify(currentUser));
-
-    return <MatchPageClientComponent currentUser={plainCurrentUser} />;
+    return (
+        <main className=''>
+            {matches.length === 0 ? (
+                <p>{NO_MATCHES_FOUND}</p>
+            ) : (
+                matches.map((user) => (
+                    <Card className='w-96 border-slate-200 hover:shadow-xl' key={user.userId}>
+                        <CardHeader>
+                            {/* <CardTitle className=''>{user.firstname} {user.lastname}</CardTitle> */}
+                            <CardDescription>{user.email}</CardDescription>
+                        </CardHeader>
+                    </Card>
+                ))
+            )}
+        </main>
+    );
 };
 
-export default matchAuthenticator;
+export default MatchPageClientComponent;

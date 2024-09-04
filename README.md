@@ -25,8 +25,8 @@ In the integrated terminal of your code editor:
 `npm i`
 
 ### Step 3: Set Up Environment Variables
-Copy the contents of sample.env to a new file named .env and fill in your credentials for Kinde and Neo4j. Get your credentials from the following links:
-- https://kinde.com/
+Copy the contents of sample.env to a new file named .env and fill in your credentials for Clerk and Neo4j. Get your credentials from the following links:
+- https://clerk.com/
 - https://neo4j.com/
 
 ### Step 4: Start the Project
@@ -68,11 +68,11 @@ Open your web browser and navigate to http://localhost:3000 to access your appli
 ## Technologies
 
 Authentication and Database Setup
-This project uses Kinde for authentication and Neo4j for the database. Make sure you have your credentials set up as described above.
+This project uses clerk for authentication and Neo4j for the database. Make sure you have your credentials set up as described above.
 
 Components and Libraries Used
 Next.js (TypeScript + Tailwind CSS): For building the user interface.
-Kinde: For authentication.
+clerk: For authentication.
 ShadCN: As the component library.
 Neo4j: As the database.
 

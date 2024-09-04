@@ -1,7 +1,7 @@
 export interface Neo4JUser {
-    applicationID: string;
-    firstname: string;
-    lastname?: string;
+    userId: string;
+    firstName: string;
+    lastName: string;
     email: string;
     collegeName: string;
     gender: number;

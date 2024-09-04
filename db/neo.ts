@@ -1,5 +1,3 @@
-import "server-only";
-
 import neo4j from "neo4j-driver";
 
 export const driver = neo4j.driver(

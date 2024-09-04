@@ -1,0 +1,5 @@
+make standouts section
+ - give option to give caption to each image , which will be optional , and another user can comment something on that
+   when commented like and comment is sent to likes section
+ - certainly there should be option where users will be able to see all of above thing and approve and disapprove
+ - 

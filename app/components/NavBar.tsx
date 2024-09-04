@@ -1,36 +1,49 @@
 "use client";
 
-import { LogoutLink } from "@kinde-oss/kinde-auth-nextjs";
-import { Neo4JUser } from '@/types';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import React from 'react';
+import { Home, Star, MessageCircle, Heart, User, LucideDrumstick } from 'lucide-react';
+import { cn } from "@/lib/utils";
 
-interface NavBarProps {
-    currentUser: Neo4JUser;
-}
+const NavBar = () => {
+    const pathname = usePathname();
 
-const NavBar: React.FC<NavBarProps> = ({ currentUser }) => {
+    const navItems = [
+        { href: "/", icon: Home, label: "Home" },
+        { href: "/standouts", icon: LucideDrumstick, label: "Standouts" }, // TODO chng this later
+        { href: "/messages", icon: MessageCircle, label: "Messages" },
+        { href: "/likes", icon: Heart, label: "Likes" },
+        { href: "/profile", icon: User, label: "Profile" },
+    ];
+
     return (
-        <div className='p-8 bg-white/30 backdrop-blur-lg'>
-            <nav className='flex items-center justify-between text-slate-700'>
-                <div className='flex space-x-4 x'>
-                    <Link href="/match" className="hover:">
-                        Match
-                    </Link>
-                    <Link href="/" className="">
-                        Feed
-                    </Link>
-                    <Link href="profile" className="">
-                        Profile
-                    </Link>
-                </div>
-                <div className='flex items-center space-x-4'>
-                    <span>{currentUser.firstname}</span>
-                    <LogoutLink>
-                        Logout
-                    </LogoutLink>
-                </div>
-            </nav>
+        <div className="fixed bottom-0 left-0 z-50 w-full h-16 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 md:hidden">
+            <div className="grid h-full grid-cols-5 mx-auto">
+                {navItems.map(({ href, icon: Icon, label }) => {
+                    const isActive = pathname === href;
+                    return (
+                        <Link 
+                            key={href} 
+                            href={href} 
+                            className={cn(
+                                "inline-flex flex-col items-center justify-center",
+                            )}
+                        >
+                            <Icon 
+                                className={cn(
+                                    "w-6 h-6",
+                                    isActive 
+                                        ? "text-blue-500 dark:text-blue-400" 
+                                        : "text-gray-500 dark:text-gray-400"
+                                )} 
+                                fill={isActive ? "currentColor" : "none"} 
+                            />
+                            <span className="sr-only">{label}</span>
+                        </Link>
+                    );
+                })}
+            </div>
         </div>
     );
 };
