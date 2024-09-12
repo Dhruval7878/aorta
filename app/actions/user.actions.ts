@@ -2,22 +2,16 @@
 
 import { driver } from "@/db/neo";
 import collegeList from "@/db/schema/college.mongo";
-import UserModel, { User } from "@/db/schema/user.mongo";
-import { Neo4JUser } from "@/db/schema/user.neo";
-import connectDB from "@/lib/dbConnect";
+import { Neo4JUser, UserWithDocument, UserWithNoDocument } from "@/db/schema/types";
+import UserModel from "@/db/schema/user.mongo";
+import connectDB from "@/db/mongo";
 import mongoose from "mongoose";
 import { int } from "neo4j-driver";
 
-export const getUserByID = async (id: string) => {
-    const result = await driver.executeQuery(`MATCH (u:User {userId: $userId}) RETURN u`, { userId: id });
-    const users = result.records.map((record) => record.get("u").properties);
-    if (users.length === 0) return null;
-    return users[0] as Neo4JUser;
-}
-
-export const createUser = async (userData: User): Promise<{ message: string }> => {
+export const createUser = async (userData: UserWithNoDocument): Promise<{ message: string }> => {
     await connectDB();
-    const { email, firstName, lastName, collegeName, gender, preference, dob, user_desc, clerk_id } = userData;
+    const { email, firstName, lastName, gender, preference, dob, user_desc, clerk_id } = userData;
+    const collegeName = email.split('@')[1].split('.')[0];
     try {
         let collegeRecord = await collegeList.findOne({ domainName: collegeName });
 
@@ -44,7 +38,8 @@ export const createUser = async (userData: User): Promise<{ message: string }> =
             user_desc,
             clerk_id,
             user_matches: [],
-            user_media: []
+            user_media: [],
+            pendingUserActions: []
         });
 
         const savedUser = await newUser.save();
@@ -60,16 +55,16 @@ export const createUser = async (userData: User): Promise<{ message: string }> =
                 preference
             };
             await createUserInNeo4j(neo4jUser);
+            return { message: "User created successfully" }
         }
-        return { message: "User created successfully" };
+        return { message: "User created successfully , wait for college to get approved" };
     } catch (error) {
         console.error('Error creating user:', error);
         throw new Error("ERRORRR");
     }
 };
 
-// *this is a function which is not going to be used outside mostly
-const createUserInNeo4j = async (user: Neo4JUser) => {
+export const createUserInNeo4j = async (user: Neo4JUser) => {
     const { userId, email, firstName, lastName, collegeName, gender, preference } = user;
     await driver.executeQuery(`
     MERGE (college:College {name: $collegeName})
@@ -79,82 +74,131 @@ const createUserInNeo4j = async (user: Neo4JUser) => {
 };
 
 export const getUsersWithNoConnection = async (
-    id: string, 
-    page: number = 1, 
-    pageSize: number = 10
+    id: string,
 ) => {
-    const skip = (page - 1) * pageSize;
+    const limit = 10
+    await connectDB();
     const result = await driver.executeQuery(`
         MATCH (cu:User {userId: $userId})-[:BELONGS_TO]->(college:College)
         MATCH (ou:User)-[:BELONGS_TO]->(college)
-        WHERE NOT (cu)-[:LIKE|:DISLIKE]->(ou) AND cu <> ou AND
+        WHERE NOT (cu)-[:LIKE|:DISLIKE]->(ou) 
+        AND NOT (ou)-[:LIKE|:DISLIKE]->(cu) AND cu <> ou AND 
         ((cu.gender = 0 AND cu.preference = 1 AND ou.gender = 1 AND ou.preference = 0) OR
          (cu.gender = 0 AND cu.preference = 0 AND ou.gender = 0 AND ou.preference = 0) OR
          (cu.gender = 1 AND cu.preference = 0 AND ou.gender = 0 AND ou.preference = 1) OR
          (cu.gender = 1 AND cu.preference = 1 AND ou.gender = 1 AND ou.preference = 1))
-        RETURN ou
-        SKIP $skip
-        LIMIT $pageSize
-    `, { 
+        RETURN ou.userId
+        LIMIT $limit
+    `, {
         userId: id,
-        skip: int(skip),
-        pageSize: int(pageSize)
+        limit: int(limit)
     });
 
-    const users = result.records.map((record) => new mongoose.Types.ObjectId(record.get("ou").userId));
-    console.log(users);
+    const userIds = result.records.map((record) => record.get("ou.userId"));
+    const users = await UserModel.find({ _id: { $in: userIds } }).select('firstName lastName user_media.img_link user_media.total_likes user_media.total_likes user_desc dob').lean();
 
-    const countResult = await driver.executeQuery(`
-        MATCH (cu:User {userId: $userId})-[:BELONGS_TO]->(college:College)
-        MATCH (ou:User)-[:BELONGS_TO]->(college)
-        WHERE NOT (cu)-[:LIKE|:DISLIKE]->(ou) AND cu <> ou AND
-        ((cu.gender = 0 AND cu.preference = 1 AND ou.gender = 1 AND ou.preference = 0) OR
-         (cu.gender = 0 AND cu.preference = 0 AND ou.gender = 0 AND ou.preference = 0) OR
-         (cu.gender = 1 AND cu.preference = 0 AND ou.gender = 0 AND ou.preference = 1) OR
-         (cu.gender = 1 AND cu.preference = 1 AND ou.gender = 1 AND ou.preference = 1))
-        RETURN count(ou) as total
-    `, { userId: id });
+    const simplifiedUsers = users.map((user) => ({
+        ...user,
+        _id: user._id.toString(),
+    }));
 
-    const totalCount = countResult.records[0].get("total").toNumber();
-
-    return {
-        users,
-        pagination: {
-            currentPage: page,
-            pageSize,
-            totalCount,
-            totalPages: Math.ceil(totalCount / pageSize)
-        }
-    };
+    return simplifiedUsers;
 }
 
-export const neo4jSwipe = async (id: string, swipe: string, userId: string) => {
-    const type = swipe === "left" ? "DISLIKE" : "LIKE";
-    await driver.executeQuery(`MATCH (cu:User {userId: $id}),(ou: User {userId: $userId}) CREATE (cu)-[:${type}]->(ou)`, { id, userId })
-    if (type === "LIKE") {
-        const result = await driver.executeQuery(`MATCH (cu:User {userId: $id}), (ou: User {userId: $userId}) WHERE (ou)-[:LIKE]->(cu) RETURN ou as match`, { id, userId });
-        const matches = result.records.map((record) => record.get("match").properties);
-        return Boolean(matches.length > 0);
-    };
+export const neo4jSwipe = async (id: string, swipe: string, userId: string, idx?: number) => { // TODO : test this function with some id , although it is working fine well according to me , but need to test it as well
+    try {
+        const type = swipe === "left" ? "DISLIKE" : "LIKE";
+
+        await driver.executeQuery(
+            `MATCH (cu:User {userId: $id}), (ou: User {userId: $userId}) 
+             CREATE (cu)-[:${type}]->(ou)`,
+            { id, userId }
+        );
+
+        await connectDB();
+        if (type === "LIKE") {
+            await connectDB();
+            const cUserId = new mongoose.Types.ObjectId(id);
+            const oUserId = new mongoose.Types.ObjectId(userId);
+
+            let updateQuery = {};
+            if (idx !== undefined) {
+                updateQuery = {
+                    $push: {
+                        [`user_media.${idx}.pendingUserActions`]: cUserId,
+                        [`user_media.${idx}.total_likes`]: { $add: [`$user_media.${idx}.total_likes`, 1] }
+                    }
+                };
+            } else {
+                updateQuery = {
+                    $push: { pendingUserActions: cUserId }
+                };
+            }
+
+            await UserModel.updateOne({ _id: oUserId }, updateQuery);
+        }
+        return { message: "Swiped successfully" };
+    } catch (error) {
+        console.error('Error swiping:', error);
+    }
 };
 
-export const getMatches = async (currentUserId: string) => {
-    const result = await driver.executeQuery(`
-        MATCH (cu:User {userId: $id})-[:LIKE]->(ou:User)
-        MATCH (ou)-[:LIKE]->(cu)
-        RETURN DISTINCT ou AS match
-    `, { id: currentUserId });
 
-    const matches = result.records.map((record) => record.get("match").properties);
-    return matches;
-}
+export const getMatches = async (currentUserId: string) => { // TODO : test this function with multiple users not only one as a match
+    try {
+        await connectDB();
+
+        const userRecord = await UserModel.findById(currentUserId);
+        if (!userRecord || !userRecord.user_matches || userRecord.user_matches.length === 0) {
+            console.log('No matches found');
+            return [];
+        }
+        const userMatches = userRecord.user_matches;
+        let matchesData = await UserModel.find({ _id: { $in: userMatches } })
+            .select('firstName lastName email user_desc dob user_media')
+            .lean();
+        matchesData = matchesData.map((match) => ({
+            ...match,
+            // _id: match._id.toString(),
+        }));
+
+        return matchesData;
+    } catch (error) {
+        console.error('Error getting matches:', error);
+    }
+};
 
 export const updateUserInDB = async (userData: any) => {
     await connectDB();
     try {
-        const { userId, firstName, lastName, gender, preference, user_desc } = userData;
+        const { userId, firstName, lastName, gender, preference, user_desc, user_media } = userData;
         let objId = new mongoose.Types.ObjectId(userId);
-        let userRecord = await UserModel.findByIdAndUpdate({ _id: objId }, { firstName, lastName, gender, preference, user_desc }, { runValidators: true });
+        let updateObj: mongoose.UpdateQuery<UserWithDocument> = {};
+
+        if (firstName !== undefined) updateObj.firstName = firstName;
+        if (lastName !== undefined) updateObj.lastName = lastName;
+        if (gender !== undefined) updateObj.gender = gender;
+        if (preference !== undefined) updateObj.preference = preference;
+        if (user_desc !== undefined) updateObj.user_desc = user_desc;
+
+        if (user_media && Array.isArray(user_media)) {
+            let formattedUserMedia;
+            if (typeof user_media[0] === 'string') {
+                formattedUserMedia = user_media.map(url => ({
+                    img_link: url,
+                    total_likes: 0
+                }));
+            } else {
+                formattedUserMedia = user_media as { img_link: string; total_likes: number }[];
+            }
+            updateObj['$set'] = { user_media: formattedUserMedia };
+        }
+        let userRecord = await UserModel.findByIdAndUpdate(
+            objId,
+            updateObj,
+            { new: true, runValidators: true }
+        );
+
         if (!userRecord) {
             throw new Error('User not found in MongoDB');
         }
@@ -164,7 +208,13 @@ export const updateUserInDB = async (userData: any) => {
             u.lastName = $lastName,
             u.gender = $gender,
             u.preference = $preference
-    `, { userId, firstName, lastName, gender, preference });
+    `, {
+            userId,
+            firstName: userRecord.firstName,
+            lastName: userRecord.lastName,
+            gender: userRecord.gender,
+            preference: userRecord.preference
+        });
         return { message: 'User updated successfully.' };
     } catch (error) {
         console.error('Error updating user:', error);
@@ -174,7 +224,7 @@ export const updateUserInDB = async (userData: any) => {
 export const getUserData = async (userMail: string): Promise<{ message: string, data: any }> => {
     await connectDB();
     try {
-        let userData = await UserModel.findOne({ email: userMail }).populate('collegeId');
+        let userData = await UserModel.findOne({ email: userMail }).populate('collegeId').select('-user_media.pendingUserActions -user_media._id');
         if (!userData) return { message: 'User not found.', data: null };
         const plainUserData = userData.toObject();
         const resData = {
@@ -210,5 +260,93 @@ export const totalUsersInACollege = async (userId: string): Promise<number> => {
     } catch (error) {
         console.error('Error getting total users:', error);
         return 0;
+    }
+}
+
+export const connectionWithLikes = async (userId: string) => {
+    try {
+        await connectDB();
+
+        const user = await UserModel.findById(new mongoose.Types.ObjectId(userId))
+            .select('user_media.pendingUserActions pendingUserActions').lean();
+
+        if (!user) {
+            console.log('User not found');
+            return [];
+        }
+
+        const pendingUserIds = new Set<string>();
+        if (user.pendingUserActions) {
+            user.pendingUserActions.forEach((id) => pendingUserIds.add(id.toString()));
+        }
+        user.user_media?.forEach((media) => {
+            media.pendingUserActions?.forEach((id) => pendingUserIds.add(id.toString()));
+        });
+
+        if (pendingUserIds.size === 0) {
+            console.log('No pending user actions found');
+            return [];
+        }
+
+        const users = await UserModel.find({ _id: { $in: Array.from(pendingUserIds) } })
+            .select('firstName lastName user_media user_desc dob').lean();
+
+        if (users.length === 0) {
+            console.log('No matching users found in MongoDB');
+            return [];
+        }
+
+        return users.map((user) => ({
+            ...user,
+            _id: user._id.toString(),
+            dob: user.dob instanceof Date ? user.dob.toISOString() : user.dob,
+        }));
+    } catch (error) {
+        console.error('Error in connectionWithLikes:', error);
+        return [];
+    }
+};
+
+export const handleLikesPageAction = async (userId: string, action: string, targetUserId: string, idx?: number) => {
+    try {
+        await connectDB();
+
+        const type = (action === "left" ? "DISLIKE" : "LIKE");
+        const cUserId = new mongoose.Types.ObjectId(userId);
+        const oUserId = new mongoose.Types.ObjectId(targetUserId);
+
+        if (type === "LIKE") {
+            if (idx !== undefined) { // ! idx is only defined when the action is for a media item
+                await UserModel.updateOne(
+                    { _id: cUserId },
+                    { $pull: { [`user_media.${idx}.pendingUserActions`]: oUserId }, }
+                );
+            }
+            else { // ! this runs when ou just liked cu , nothing else
+                await UserModel.updateOne(
+                    { _id: cUserId },
+                    { $pull: { pendingUserActions: oUserId }, $push: { user_matches: oUserId } }
+                );
+            }
+            await UserModel.updateOne(
+                { _id: oUserId },
+                { $push: { user_matches: cUserId } }
+            );
+        } else {
+            await UserModel.updateOne(
+                { _id: cUserId },
+                {
+                    $pull: { pendingUserActions: oUserId }
+                }
+            );
+        }
+        await driver.executeQuery(`
+            MATCH (cu:User {userId: $userId}), (ou: User {userId: $targetUserId}) 
+            CREATE (cu)-[:${type}]->(ou)
+            `, { userId, targetUserId });
+        return { message: 'Action performed successfully' };
+    } catch (error) {
+        console.error('Error in handleLikesPageAction:', error);
+        return { message: 'Error performing action' };
     }
 }

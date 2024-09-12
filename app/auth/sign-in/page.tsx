@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react';
-import { useForm, SubmitHandler } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useSignIn } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
@@ -44,6 +44,7 @@ const SignInPage = () => {
                 await setActive({ session: response.createdSessionId });
                 try {
                     const data = await getUserData(response.identifier!);
+                    console.log(data);
                     dispatch(setUser(data))
                     toast({
                         title: SUCCESS_TITLE,
@@ -135,7 +136,7 @@ const SignInPage = () => {
                 <CardFooter className="flex justify-center">
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                         Don't have an account?{' '}
-                        <a href="/signup" className="text-blue-600 dark:text-blue-400 hover:underline">
+                        <a href="/auth/sign-up" className="text-blue-600 dark:text-blue-400 hover:underline">
                             Sign up
                         </a>
                     </p>

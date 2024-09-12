@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { INVALID_EMAIL, PASS_MAX, PASS_MAX_ERR, PASS_MIN, PASS_MIN_ERR, REQ_FNAME_ERR, REQ_GENDER_ERR, REQ_LNAME_ERR, REQ_OTP_ERR, REQ_PREF_ERR } from "../../lib/constants";
+import { INVALID_EMAIL, PASS_MAX, PASS_MAX_ERR, PASS_MIN, PASS_MIN_ERR } from "../../lib/constants";
 
 export const UserLoginSchema = z.object({
   email: z.string().email({ message: INVALID_EMAIL }),

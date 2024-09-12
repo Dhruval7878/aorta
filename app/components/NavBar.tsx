@@ -3,18 +3,18 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import React from 'react';
-import { Home, Star, MessageCircle, Heart, User, LucideDrumstick } from 'lucide-react';
+import { Home, MessageCircle, Heart, Settings, LucideDrumstick } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 const NavBar = () => {
     const pathname = usePathname();
 
     const navItems = [
-        { href: "/", icon: Home, label: "Home" },
+        { href: "/feed", icon: Home, label: "Home" },
         { href: "/standouts", icon: LucideDrumstick, label: "Standouts" }, // TODO chng this later
-        { href: "/messages", icon: MessageCircle, label: "Messages" },
+        { href: "/match", icon: MessageCircle, label: "Messages" },
         { href: "/likes", icon: Heart, label: "Likes" },
-        { href: "/profile", icon: User, label: "Profile" },
+        { href: "/settings", icon: Settings, label: "Settings" },
     ];
 
     return (
@@ -23,21 +23,21 @@ const NavBar = () => {
                 {navItems.map(({ href, icon: Icon, label }) => {
                     const isActive = pathname === href;
                     return (
-                        <Link 
-                            key={href} 
-                            href={href} 
+                        <Link
+                            key={href}
+                            href={href}
                             className={cn(
                                 "inline-flex flex-col items-center justify-center",
                             )}
                         >
-                            <Icon 
+                            <Icon
                                 className={cn(
                                     "w-6 h-6",
-                                    isActive 
-                                        ? "text-blue-500 dark:text-blue-400" 
+                                    isActive
+                                        ? "text-blue-500 dark:text-blue-400"
                                         : "text-gray-500 dark:text-gray-400"
-                                )} 
-                                fill={isActive ? "currentColor" : "none"} 
+                                )}
+                                fill={isActive ? "currentColor" : "none"}
                             />
                             <span className="sr-only">{label}</span>
                         </Link>

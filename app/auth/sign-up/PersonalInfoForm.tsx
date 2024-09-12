@@ -39,6 +39,7 @@ const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({ onSubmit }) => {
                     className="w-full p-2 border rounded"
                     type="date"
                     max={MIN_ALLOWED_DATE}
+                    required
                 />
                 {errors.dob && <p className="text-red-500">{errors.dob.message}</p>}
             </div>

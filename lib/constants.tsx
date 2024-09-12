@@ -57,6 +57,6 @@ export const PASS_MAX_ERR = 'Password cannot be longer than 64 characters';
 export const MATCH_ALERT = "It's a match!";
 export const MATCH_DESC = "You both liked each other!";
 // ----------------------------------FEED FEATURE REALTED -------------------------
-export const FEED_NO_USER = '0 users for now, come back later.';
+export const FEED_NO_USER = 'users for now, come back later.';
 // ----------------------------------LOGIC-----------------------------------
 export const MIN_ALLOWED_DATE = new Date(Date.now() - 18 * 365.25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];

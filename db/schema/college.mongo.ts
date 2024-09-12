@@ -1,9 +1,5 @@
-import mongoose, { Document, Model, Schema, model, models } from "mongoose";
-
-export interface ICollege extends Document {
-    domainName: string;
-    status: "pending" | "approved" | "rejected";
-}
+import mongoose, { Model, Schema, model, models } from "mongoose";
+import { ICollege } from "./types";
 
 const collegeSchema: Schema = new Schema({
     domainName: {
@@ -21,8 +17,8 @@ const collegeSchema: Schema = new Schema({
 let collegeList: Model<ICollege>;
 
 try {
-    if (mongoose.models && mongoose.models.collegeList) {
-        collegeList = mongoose.models.collegeList as Model<ICollege>;
+    if (models && models.collegeList) {
+        collegeList = models.collegeList as Model<ICollege>;
     } else {
         collegeList = model<ICollege>('collegeList', collegeSchema);
     }

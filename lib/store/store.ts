@@ -6,7 +6,7 @@ export const makeStore = () => {
     const persistedUserData = nextLocalStorage()?.getItem('userData')
     const preloadedState = {
         user: {
-            userData: persistedUserData ? JSON.parse(persistedUserData) : null
+            userData: (persistedUserData && persistedUserData !== 'undefined') ? JSON.parse(persistedUserData) : null
         }
     }
     return configureStore({

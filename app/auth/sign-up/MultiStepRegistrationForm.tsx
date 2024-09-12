@@ -11,6 +11,7 @@ import { useSignUp, useClerk } from '@clerk/nextjs';
 import { useToast } from '@/components/ui/use-toast';
 import { PersonalInfoData, CredentialsData } from '@/db/schema/auth.schema';
 import { COMPLETE, ERROR_CREATING_USER, ERROR_TITLE, FAILED_CREATING_USER } from '@/lib/constants';
+import mongoose from 'mongoose';
 
 const MultiStepRegistrationForm = () => {
     const router = useRouter();
@@ -55,14 +56,14 @@ const MultiStepRegistrationForm = () => {
                     email: credentials!.email,
                     firstName: personalInfo!.firstName,
                     lastName: personalInfo!.lastName,
-                    collegeName: credentials!.email.split('@')[1].split('.')[0] || 'unknown',
                     gender: personalInfo!.gender == "0" ? 0 : 1,
                     preference: personalInfo!.preference == "0" ? 0 : 1,
                     dob: new Date(personalInfo!.dob),
                     clerk_id: completeSignUp.createdUserId!,
                     user_desc: '',
                     user_matches: [],
-                    user_media: []
+                    user_media: [],
+                    collegeId: new mongoose.Types.ObjectId('b3b3b3b3b3b3b3b3b3b3b3b3'),
                 };
                 try {
                     await createUser(userData);

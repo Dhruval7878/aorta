@@ -1,32 +1,21 @@
-import mongoose, { Schema, Document, model, Model, models } from "mongoose";
+import mongoose, { Schema, model, Model } from "mongoose";
+import { IUser } from "./types";
 
-export interface User {
-    clerk_id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    collegeName: string;
-    gender: number;
-    preference: number;
-    dob: Date;
-    user_desc?: string;
-    user_matches?: string[];
-    user_media?: string[];
-}
-
-export interface IUser extends Document {
-    clerk_id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    collegeId: mongoose.Types.ObjectId;
-    gender: number;
-    preference: number;
-    dob: Date;
-    user_desc?: string;
-    user_matches?: string[];
-    user_media?: string[];
-}
+const media: Schema = new Schema({
+    img_link: {
+        type: String,
+        required: true
+    },
+    total_likes: {
+        type: Number,
+        default: 0
+    },
+    pendingUserActions: {
+        type: [mongoose.Schema.Types.ObjectId],
+        ref: 'UserModel',
+        default: []
+    }
+});
 
 const userSchema: Schema = new Schema({
     clerk_id: {
@@ -68,10 +57,15 @@ const userSchema: Schema = new Schema({
         required: true
     },
     user_matches: {
-        type: [String]
+        type: [mongoose.Schema.Types.ObjectId]
     },
     user_media: {
-        type: [String]
+        type: [media]
+    },
+    pendingUserActions: {
+        type: [mongoose.Schema.Types.ObjectId],
+        ref: 'UserModel',
+        default: []
     }
 }, { timestamps: true });
 
